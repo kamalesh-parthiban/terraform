@@ -1,0 +1,49 @@
+#main.tf
+
+provider "aws" {
+  region = "us-east-2"               // AWS region where all resources will be created
+}
+
+# Create VPC
+resource "aws_vpc" "my_vpc" {
+  cidr_block           = "10.0.0.0/16"  // IP range for entire VPC
+  enable_dns_support   = true            // allows DNS resolution inside VPC
+  enable_dns_hostnames = true            // allows DNS hostnames for EC2 instances
+  tags = {
+    Name = "myproject"                   // name tag visible in AWS console
+  }
+}
+
+# Create Public Subnet
+resource "aws_subnet" "public_subnet" {
+  vpc_id                  = aws_vpc.my_vpc.id  // attach subnet to above VPC
+  cidr_block              = "10.0.1.0/24"      // IP range for public subnet
+  map_public_ip_on_launch = true               // auto assign public IP to EC2 launched here
+  tags = {
+    Name = "myproject-public"                  // name tag visible in AWS console
+  }
+}
+
+# Create Private Subnet
+resource "aws_subnet" "private_subnet" {
+  vpc_id     = aws_vpc.my_vpc.id  // attach subnet to above VPC
+  cidr_block = "10.0.2.0/24"     // IP range for private subnet - no public IP assigned
+  tags = {
+    Name = "myproject-private"    // name tag visible in AWS console
+  }
+}
+
+
+----------
+#statelock 
+#$ cat backend.tf
+
+terraform {
+  backend "s3" {
+    bucket         = "statelockdemo004"                   //S3 bucket name - create this manually in AWS
+    key            = "dev/vpc/terraform.tfstate"          // path inside S3 bucket where state file is saved
+    region         = "us-east-2"                          // AWS region where S3 bucket is created
+    encrypt        = true                                 // encrypt state file at rest in S3
+    dynamodb_table = "terraform-locks"                    // DynamoDB table name - create this manually in AWS
+  }
+}
