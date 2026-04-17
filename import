@@ -1,0 +1,22 @@
+#$ cat import.tf
+
+import {
+  to = aws_instance.my_server       // which terraform resource to import into // aws_instance = resource type  // my_server    = resource name you give it
+  id = "i-09519fa48c7c66f84"    # your actual EC2 instance ID
+}
+
+---------------------------
+
+#$ cat main.tf
+
+provider "aws" {
+  region = "us-east-2"
+}
+
+--------------------------------------------------------
+
+#terraform plan -generate-config-out=generated.tf        // to generate
+
+
+#$ cat generated.tf
+# __generated__ by Terraform
