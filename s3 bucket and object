@@ -1,0 +1,15 @@
+provider "aws" {
+  region = "us-east-2"
+}
+
+# Create S3 bucket
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-name-rahu" # must be globally unique
+}
+
+# Create an object in the bucket
+resource "aws_s3_object" "example_object" {
+  bucket  = aws_s3_bucket.my_bucket.id
+  key     = "hello.txt"
+  content = "Hello, Terraform!"
+}
