@@ -1,0 +1,41 @@
+provider "aws" {
+  region = "us-east-1"          // AWS region where all resources will be created
+}
+
+# IAM User
+resource "aws_iam_user" "admin_user" {
+  name = "lucy"                 // IAM username created in AWS
+  tags = {
+    Description = "Technical Team Leader"  // tag visible in AWS console
+  }
+}
+
+# IAM Policy
+resource "aws_iam_policy" "admin_policy" {
+  name   = "AdminUsers"         // name of the IAM policy created in AWS
+  policy = <<EOF                // heredoc syntax - write JSON policy directly here
+{
+  "Version": "2012-10-17",      // IAM policy version - always this value
+  "Statement": [
+    {
+      "Effect": "Allow",        // Allow or Deny - here we Allow
+      "Action": "*",            // * means all AWS actions (full access)
+      "Resource": "*"           // * means all AWS resources
+    }
+  ]
+}
+EOF                             // end of heredoc - closing the policy JSON
+}
+
+# Attach policy to user
+resource "aws_iam_user_policy_attachment" "lucy_admin_attach" {
+  user       = aws_iam_user.admin_user.name    // reference to lucy user created above
+  policy_arn = aws_iam_policy.admin_policy.arn // reference to AdminUsers policy created above
+                                               // arn = Amazon Resource Name (unique ID)
+}
+
+
+# IAM User  : lucy
+# IAM Policy: AdminUsers (full access to everything)
+# Attachment: lucy → AdminUsers policy
+# Result    : lucy has full admin access to AWS ✅
