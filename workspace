@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────
+# main.tf
+# ─────────────────────────────────────────
+provider "aws" {
+  region = "us-east-2"          // AWS region where all resources will be created
+}
+
+variable "ami" {}               // AMI ID declared here - value comes from terraform.tfvars
+
+variable "instance_type_map" {
+  type = map(string)            // map type - key=string, value=string
+  default = {
+    dev   = "t3.micro"          // dev workspace   → t3.micro
+    stage = "t3.medium"         // stage workspace  → t3.medium
+    prod  = "t3.large"          // prod workspace   → t3.large
+  }
+}
+
+module "ec2_instance" {
+  source        = "./modules/ec2_instance"               // path to module folder
+  ami           = var.ami                                // passes AMI from tfvars
+  instance_type = var.instance_type_map[terraform.workspace]  // picks instance type based on current workspace
+                                                         // dev   → t3.micro
+                                                         // stage → t3.medium
+                                                         // prod  → t3.large
+  env           = terraform.workspace                    // passes current workspace name to module
+}
+
+# ─────────────────────────────────────────
+# terraform.tfvars
+# ─────────────────────────────────────────
+ami = "ami-0a1b6a02658659c2a"   // actual AMI ID value - fed into var.ami in main.tf
+
+# ─────────────────────────────────────────
+# modules/ec2_instance/main.tf
+# ─────────────────────────────────────────
+variable "ami" {}               // receives ami value from parent main.tf
+variable "instance_type" {}     // receives instance_type value from parent main.tf
+variable "env" {}               // receives workspace name from parent main.tf
+
+resource "aws_instance" "this" {
+  ami           = var.ami           // uses AMI passed from parent
+  instance_type = var.instance_type // uses instance type picked by workspace
+  tags = {
+    Name = "ec2-${var.env}"         // ec2-dev OR ec2-stage OR ec2-prod based on workspace
+  }
+}
+
+
+--=========================-------------------
+A workspace is a way to manage multiple environments (dev, prod) using the same Terraform code with separate state files.
+
+
+$ tree
+.
+|-- main.tf
+|-- modules
+|   `-- ec2_instance
+|       `-- main.tf
+|-- terraform.tfstate.d
+|   |-- dev
+|   |   `-- terraform.tfstate        //separate state files for dev
+|   |-- prod
+|   |   `-- terraform.tfstate        //separate state files for prod
+|   `-- stage
+`-- terraform.tfvars
+
+
+terraform workspace new dev
+terraform workspace new stage
+terraform workspace new prod
+terraform workspace select prod
+terraform workspace show
