@@ -61,5 +61,41 @@ apply (1st) → state v1
 apply (2nd) → state v2   (v1 still exists)
 apply (3rd) → state v3   (v1, v2 still exist)
 
+
+Copy the previous VersionId and download it:
+
+aws s3api get-object \
+  --bucket statelockdemo0045 \
+  --key dev/vpc/terraform.tfstate \
+  --version-id <PASTE_VERSION_ID_HERE> \
+  previous.tfstate
+
+kamalesh parthiban@kamalesh MINGW64 ~/vpc_statelock
+$ ll
+total 13
+-rw-r--r-- 1 kamalesh parthiban 197121  576 Apr 18 16:45 backend.tf
+-rw-r--r-- 1 kamalesh parthiban 197121 1229 Apr 18 16:52 main.tf
+-rw-r--r-- 1 kamalesh parthiban 197121 6229 Apr 18 16:58 previous.tfstate
+
+----------------------------------
+Push previous state:
+------------------------------
+
+terraform state push previous.tfstate
+
+-------------------------------
+change the main.tf code to previous state
+
+----------
+Apply:
+---------
+
+terraform apply
+
+-------
+list versions → pick old VersionId → download → push → apply
+                                                        ↓
+                                          infra rolls back to previous state
+
 ⚠️ Without versioning, each apply overwrites the previous state — no rollback possible.
 
