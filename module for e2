@@ -30,3 +30,52 @@ variable "ami_id" {}        // declares ami_id variable - accepts value from par
 variable "instance_type" {} // declares instance_type variable - accepts value from parent
 variable "key_name" {}      // declares key_name variable - accepts value from parent
 variable "name" {}          // declares name variable - accepts value from parent
+
+=============================================
+
+uses:
+
+A module is a reusable group of Terraform resources
+
+
+# reuse same module for dev and prod
+module "dev_ec2" {
+  source        = "./modules/ec2"
+  name          = "dev-ec2"
+  instance_type = "t3.micro"
+  ami_id        = "ami-123456"
+  key_name      = "dev-key"
+}
+
+module "prod_ec2" {
+  source        = "./modules/ec2"
+  name          = "prod-ec2"
+  instance_type = "t3.large"
+  ami_id        = "ami-123456"
+  key_name      = "prod-key"
+}
+
+
+With module    → write once, call multiple times with different values
+
+Yes, two separate EC2 instances:
+
+dev_ec2  → t3.micro  , name = "dev-ec2"
+prod_ec2 → t3.large  , name = "prod-ec2"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
