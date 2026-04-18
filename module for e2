@@ -1,31 +1,32 @@
 # main.tf
 provider "aws" {
-  region = "us-east-1"
+  region = "us-east-1"          // AWS region where all resources will be created
 }
 
-module "ec2" {
-  source        = "./modules/ec2"
-  ami_id        = "ami-123456"
-  instance_type = "t3.micro"
-  key_name      = "my-key"
-  name          = "my-ec2"
+module "ec2" {                  // calling a reusable module named ec2  // it can be any name
+  source        = "./modules/ec2"  // path where module code is located (local folder)
+  ami_id        = "ami-123456"     // passing AMI ID as input to module
+  instance_type = "t3.micro"       // passing instance type as input to module
+  key_name      = "my-key"         // passing key pair name as input to module
+  name          = "my-ec2"         // passing name tag as input to module
 }
 
-
+# ─────────────────────────────────────────
 # modules/ec2/main.tf
+# ─────────────────────────────────────────
 resource "aws_instance" "app" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  key_name      = var.key_name
-
+  ami           = var.ami_id        // receives ami_id value from parent main.tf
+  instance_type = var.instance_type // receives instance_type value from parent main.tf
+  key_name      = var.key_name      // receives key_name value from parent main.tf
   tags = {
-    Name = var.name
+    Name = var.name                 // receives name value from parent main.tf
   }
 }
 
-
+# ─────────────────────────────────────────
 # modules/ec2/variables.tf
-variable "ami_id" {}
-variable "instance_type" {}
-variable "key_name" {}
-variable "name" {}
+# ─────────────────────────────────────────
+variable "ami_id" {}        // declares ami_id variable - accepts value from parent
+variable "instance_type" {} // declares instance_type variable - accepts value from parent
+variable "key_name" {}      // declares key_name variable - accepts value from parent
+variable "name" {}          // declares name variable - accepts value from parent
