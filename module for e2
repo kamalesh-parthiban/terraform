@@ -62,20 +62,3 @@ Yes, two separate EC2 instances:
 
 dev_ec2  → t3.micro  , name = "dev-ec2"
 prod_ec2 → t3.large  , name = "prod-ec2"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
