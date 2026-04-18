@@ -52,3 +52,14 @@ terraform {
 #terraform force-unlock <LOCK_ID>
 
 #Use terraform state list and terraform state show to verify the state before unlocking.
+
+AWS Console → S3 → statelockdemo004 → Properties → Versioning → Enable
+
+Then every apply auto saves a new version:
+
+apply (1st) → state v1
+apply (2nd) → state v2   (v1 still exists)
+apply (3rd) → state v3   (v1, v2 still exist)
+
+⚠️ Without versioning, each apply overwrites the previous state — no rollback possible.
+
