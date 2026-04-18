@@ -1,0 +1,31 @@
+# main.tf
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "ec2" {
+  source        = "./modules/ec2"
+  ami_id        = "ami-123456"
+  instance_type = "t3.micro"
+  key_name      = "my-key"
+  name          = "my-ec2"
+}
+
+
+# modules/ec2/main.tf
+resource "aws_instance" "app" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  key_name      = var.key_name
+
+  tags = {
+    Name = var.name
+  }
+}
+
+
+# modules/ec2/variables.tf
+variable "ami_id" {}
+variable "instance_type" {}
+variable "key_name" {}
+variable "name" {}
