@@ -59,6 +59,7 @@ module "prod_ec2" {
 With module    → write once, call multiple times with different values
 
 Yes, two separate EC2 instances:
+Same module, different values — no need to rewrite the EC2 resource twice.
 
 dev_ec2  → t3.micro  , name = "dev-ec2"
 prod_ec2 → t3.large  , name = "prod-ec2"
