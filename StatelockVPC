@@ -41,9 +41,9 @@ resource "aws_subnet" "private_subnet" {
 terraform {
   backend "s3" {
     bucket         = "statelockdemo004"                   //S3 bucket name - create this manually in AWS
-    key            = "dev/vpc/terraform.tfstate"          // path inside S3 bucket where state file is saved
+    key            = "dev/vpc/terraform.tfstate"          // path inside S3 bucket where state file is saved  // this dev vpc and tf will create automatically
     region         = "us-east-2"                          // AWS region where S3 bucket is created
     encrypt        = true                                 // encrypt state file at rest in S3
-    dynamodb_table = "terraform-locks"                    // DynamoDB table name - create this manually in AWS
+    dynamodb_table = "terraform-locks"                    // DynamoDB table name - create this manually in AWS  // dynamodb - tablename= terraform-locks and partition key = LockID
   }
 }
