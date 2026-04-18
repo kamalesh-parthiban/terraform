@@ -47,3 +47,8 @@ terraform {
     dynamodb_table = "terraform-locks"                    // DynamoDB table name - create this manually in AWS  // dynamodb - tablename= terraform-locks and partition key = LockID
   }
 }
+
+
+#terraform force-unlock <LOCK_ID>
+
+#Use terraform state list and terraform state show to verify the state before unlocking.
