@@ -1,0 +1,10 @@
+export TF_LOG=DEBUG
+export TF_LOG_PATH=terraform.log
+terraform apply
+
+📊 3. Log levels (how detailed you want)
+TF_LOG=TRACE   # very detailed (huge logs)
+TF_LOG=DEBUG   # best for debugging ✅
+TF_LOG=INFO
+TF_LOG=WARN
+TF_LOG=ERROR
