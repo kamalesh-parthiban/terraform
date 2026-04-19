@@ -1,0 +1,25 @@
+terraform apply -target="aws_instance.my"
+
+What it does:
+
+applies only the targeted resource
+ignores all other resources
+
+Example:
+
+# apply only EC2
+terraform apply -target="aws_instance.my"
+
+# apply only VPC
+terraform apply -target="aws_vpc.my_vpc"
+
+# apply module
+terraform apply -target="module.ec2"
+
+When to use:
+
+testing a single resource    ✅
+fixing one broken resource   ✅
+partial apply                ✅
+
+⚠️ -target is for troubleshooting only — regular applies should always run against all resources to avoid state drift.
