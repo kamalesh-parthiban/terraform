@@ -1,0 +1,30 @@
+ terraform destroy and terraform apply -destroy
+
+Both do the same thing — destroy all resources.
+
+terraform destroy
+
+asks confirmation → destroys all resources
+no plan file support
+
+terraform apply -destroy
+
+shows plan first → asks confirmation → destroys all resources
+supports -out flag to save plan
+
+# save destroy plan
+terraform plan -destroy -out=destroy.plan
+
+# review plan
+terraform show destroy.plan
+
+# execute
+terraform apply destroy.plan
+
+Summary:
+
+terraform destroy              → quick destroy ✅
+terraform apply -destroy       → destroy with plan file support ✅✅
+
+terraform apply -destroy is preferred in production — you can review and save the destroy plan before executing.
+
