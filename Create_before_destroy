@@ -10,3 +10,7 @@ resource "aws_instance" "app" {
     create_before_destroy = true
   }
 }
+
+This ensures the new instance is created before the old one is deleted.
+
+Alternatively, use an Auto Scaling Group (ASG) with rolling updates.
