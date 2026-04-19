@@ -81,11 +81,14 @@ assumes TerraformRole in prod account
        ↓
 creates resources in prod account
 
+---------------------
+Use -target for deploying only one account:
 
+# deploy only dev
+terraform apply -target="aws_instance.dev_ec2"
 
-
-
-
+# deploy only prod
+terraform apply -target="aws_instance.prod_ec2"
 
 
 
