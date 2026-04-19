@@ -20,6 +20,10 @@ terraform plan -refresh-only
 
 terraform state list  →  Lists all resources tracked in the state file:
 
+$ terraform state list
+aws_instance.my
+
+
 # step 1 - import resource into state
 terraform import aws_instance.my i-09519fa48c7c66f84
 
