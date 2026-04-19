@@ -1,0 +1,17 @@
+In Terraform v0.15+, terraform taint is removed. Instead, use:
+
+terraform apply -replace="aws_instance.my"
+
+What it does:
+
+forces a specific resource to be destroyed and recreated even if no config change
+
+When to use:
+
+EC2 is unhealthy/corrupted    → force recreate
+Resource stuck in bad state   → force recreate
+
+Old vs New:
+
+terraform taint aws_instance.my   → deprecated ❌
+terraform apply -replace="aws_instance.my"  → current way ✅
