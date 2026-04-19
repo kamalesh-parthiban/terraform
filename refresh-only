@@ -1,0 +1,9 @@
+Since Terraform v1.1, terraform refresh is deprecated and terraform apply -refresh-only should be used.
+
+terraform apply               → makes infra match code
+terraform apply -refresh-only → makes state match real infra
+
+Someone manually added a tag in AWS console
+→ terraform apply -refresh-only
+→ state file now reflects that manual tag
+→ no infra touched
