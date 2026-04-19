@@ -1,0 +1,113 @@
+Cross-Region (same account, different regions):
+
+provider "aws" {
+  alias  = "us"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "india"
+  region = "ap-south-1"
+}
+
+resource "aws_s3_bucket" "bucket" {
+  provider = aws.us
+  bucket   = "my-bucket"
+}
+
+resource "aws_instance" "ec2" {
+  provider      = aws.india
+  ami           = "ami-123456"
+  instance_type = "t3.micro"
+}
+
+-----------------------------------
+
+Cross-Account (different accounts, any region):
+
+Since you already configured default credentials via AWS CLI, use assume_role for cross account:
+
+Step 1 — Create IAM role in prod account:
+
+prod AWS account → IAM → Create Role
+→ trusted entity = dev account ID
+→ attach AdministratorAccess policy
+→ role name = TerraformRole
+
+Step 2 — main.tf:
+
+# dev account - uses your default CLI credentials
+provider "aws" {
+  alias  = "dev"
+  region = "us-east-1"
+}
+
+# prod account - assumes role
+provider "aws" {
+  alias  = "prod"
+  region = "us-east-1"
+
+  assume_role {
+    role_arn = "arn:aws:iam::PROD_ACCOUNT_ID:role/TerraformRole"
+  }
+}
+
+resource "aws_instance" "dev_ec2" {
+  provider      = aws.dev
+  ami           = "ami-123456"
+  instance_type = "t3.micro"
+}
+
+resource "aws_instance" "prod_ec2" {
+  provider      = aws.prod
+  ami           = "ami-123456"
+  instance_type = "t3.micro"
+}
+
+--
+
+terraform apply
+     ↓
+dev account  → creates dev_ec2  ✅
+prod account → creates prod_ec2 ✅
+     ↓
+both happen in parallel
+
+Flow:
+
+your CLI credentials (dev account)
+       ↓
+assumes TerraformRole in prod account
+       ↓
+creates resources in prod account
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
