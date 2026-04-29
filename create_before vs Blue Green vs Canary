@@ -1,0 +1,125 @@
+Rolling              Blue/Green        Canary
+(create_before)
+────────────────────────────────────────────────────────────────────
+ALB                 1                    1                 1
+TG                  1                    2                 2
+ASG                 1                    2                 2
+cost                cheap ✅             2x ❌             2x ❌
+mixed versions      ⚠️ yes              ✅ no             ✅ no
+old+new traffic     same TG both hit     0or100 no mix     5% new rest old
+traffic control     ✗ automatic         0 or 100 only     5→25→50→100
+test before live    ✗ no               ✅ yes             ✅ yes
+rollback            slow 5-10 min       instant ✅         instant ✅
+users affected      100% ⚠️            100% at switch ⚠️  5% only ✅
+complexity          simple ✅           medium             complex
+risk                medium              low                lowest ✅
+best for            minor updates       feature release    critical apps
+────────────────────────────────────────────────────────────────────
+ANALOGY
+Rolling    →  replace tyres while driving
+Blue/Green →  jump to a second car instantly
+Canary     →  let 5 people test the car first
+              then give to everyone
+
+"create_before_destroy absolutely achieves zero downtime because ALB always has healthy targets throughout the update.
+ But it does NOT prevent mixed versions — old and new EC2s serve traffic together briefly during the update.
+ Zero downtime and zero mixed versions are two different problems.
+ create_before_destroy solves downtime.
+ Blue/Green and Canary solve mixed versions." ✅
+
+NORMALLY IN AWS CONSOLE for Canary
+──────────────────────────────────────────────────────────
+
+Step 1 → go to EC2 Console
+          → Load Balancers
+          → select your ALB
+          → Listeners tab
+          → click View/edit rules
+
+
+Step 2 → edit the listener rule
+          → click edit on forward action
+          → you will see this:
+
+          Target Group        Weight
+          ─────────────────────────
+          TG-old              100
+          TG-new              0
+
+          change to:
+          TG-old              95
+          TG-new              5
+          → Save ✅
+
+
+Step 3 → monitor
+          → CloudWatch metrics
+          → check error rate
+          → check response time
+          → check logs
+
+
+Step 4 → increase weight again in console
+          TG-old  75
+          TG-new  25
+          → Save ✅
+
+Step 5 → keep increasing
+          TG-old  50  TG-new  50  → Save
+          TG-old  25  TG-new  75  → Save
+          TG-old  0   TG-new  100 → Save ✅
+
+-------------------
+BOTH Blue/Green and Canary USE SAME ALB WEIGHT FEATURE
+──────────────────────────────────────────────────────────
+
+ALB Listener Rule → Forward Action → Target Group Weights
+
+this is the SAME feature
+difference is only HOW you use the weights
+
+
+BLUE/GREEN — weight as a SWITCH
+──────────────────────────────────────────────────────────
+
+before:
+  TG-Blue   weight = 100  ✅ live
+  TG-Green  weight = 0    🔄 testing
+
+after testing green:
+  TG-Blue   weight = 0    ❌ off
+  TG-Green  weight = 100  ✅ live
+
+pattern:  100/0  →  0/100
+          ON/OFF     OFF/ON
+          no steps in between
+          instant full switch
+
+
+CANARY — weight as a DIAL
+──────────────────────────────────────────────────────────
+
+  TG-Old  weight = 100  TG-New weight = 0
+  TG-Old  weight = 95   TG-New weight = 5
+  TG-Old  weight = 75   TG-New weight = 25
+  TG-Old  weight = 50   TG-New weight = 50
+  TG-Old  weight = 25   TG-New weight = 75
+  TG-Old  weight = 0    TG-New weight = 100
+
+pattern:  gradual steps
+          monitor at each step
+          full control
+
+
+SAME FEATURE DIFFERENT PURPOSE
+──────────────────────────────────────────────────────────
+
+Feature             Blue/Green        Canary
+────────────────────────────────────────────────────────
+ALB weights         ✅ yes           ✅ yes
+2 TGs               ✅ yes           ✅ yes
+2 ASGs              ✅ yes           ✅ yes
+weight pattern      0 or 100 only    gradual steps
+purpose             instant switch   gradual rollout
+steps               1 step           multiple steps
+monitoring          before switch    at every step
