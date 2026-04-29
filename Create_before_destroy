@@ -14,3 +14,320 @@ resource "aws_instance" "app" {
 This ensures the new instance is created before the old one is deleted.
 
 Alternatively, use an Auto Scaling Group (ASG) with rolling updates.
+-----------------------
+
+1 ALB + 1 TG + 1 ASG
++ create_before_destroy = true
+        ↓
+New ASG created first   ✅
+New EC2s registered     ✅
+ALB health checks pass  ✅
+Old ASG destroyed       ✅
+Zero downtime           ✅
+No Blue/Green needed    ✅
+
+What Gets Recreated vs What Stays
+
+STAYS FOREVER (never recreated)
+──────────────────────────────────────────────────────────
+
+aws_lb                  ✅ stays
+aws_lb_listener         ✅ stays
+aws_lb_target_group     ✅ stays
+aws_security_group      ✅ stays
+aws_vpc                 ✅ stays
+aws_subnet              ✅ stays
+
+
+GETS RECREATED (on ami or instance type change)
+──────────────────────────────────────────────────────────
+
+aws_launch_template     🔄 recreated
+aws_autoscaling_group   🔄 recreated
+EC2 instances           🔄 recreated
+
+
+WHY ONLY THOSE TWO
+──────────────────────────────────────────────────────────
+
+aws_launch_template:
+  → you changed ami_id or instance_type
+  → these are baked into launch template
+  → terraform must create new LT
+  → old LT deleted after
+
+aws_autoscaling_group:
+  → it references the launch template
+  → LT changed = ASG must be recreated
+  → name_prefix generates new unique name
+  → new ASG launches new EC2s
+  → old ASG deleted after
+
+EC2 instances:
+  → managed by ASG
+  → old ASG terminates old EC2s
+  → new ASG launches new EC2s
+  → happens automatically
+
+
+Why Zero Downtime
+
+want to change the instance type or ami?
+
+WHAT HAPPENS DURING terraform apply
+──────────────────────────────────────────────────────────
+
+Step 1 → new Launch Template created  (ami-NEW, t3.large)
+Step 2 → new ASG created with new LT
+Step 3 → new EC2s launch (ami-NEW, t3.large)
+Step 4 → new EC2s register in TG
+Step 5 → ALB health checks pass on new EC2s
+Step 6 → wait_for_elb_capacity = 2 satisfied
+Step 7 → old ASG destroyed
+Step 8 → old EC2s deregistered and terminated
+
+ALB always has healthy targets
+zero downtime ✅
+zero data loss ✅
+
+---
+
+Full Terraform — Zero Downtime with create_before_destroy
+
+# ─────────────────────────────────────────
+# variables.tf
+# ─────────────────────────────────────────
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instances"
+  type        = string
+  default     = "ami-new456"       # ← change this to update
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.medium"        # ← change this to update
+}
+
+variable "region" {
+  default = "us-east-2"
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_ids" {
+  type = list(string)
+}
+
+
+# ─────────────────────────────────────────
+# main.tf
+# ─────────────────────────────────────────
+
+provider "aws" {
+  region = var.region
+}
+
+
+# ─────────────────────────────────────────
+# SECURITY GROUP — ALB
+# ─────────────────────────────────────────
+
+resource "aws_security_group" "alb" {
+  name        = "alb-sg"
+  description = "Allow HTTP from internet"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+# ─────────────────────────────────────────
+# SECURITY GROUP — EC2
+# ─────────────────────────────────────────
+
+resource "aws_security_group" "ec2" {
+  name        = "ec2-sg"
+  description = "Allow HTTP from ALB only"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]  # only ALB can reach EC2
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+# ─────────────────────────────────────────
+# ALB — stays forever, never recreated
+# ─────────────────────────────────────────
+
+resource "aws_lb" "this" {
+  name               = "my-alb"
+  internal           = false
+  load_balancer_type = "application"
+  subnets            = var.subnet_ids
+  security_groups    = [aws_security_group.alb.id]
+
+  tags = {
+    Name = "my-alb"
+  }
+}
+
+
+# ─────────────────────────────────────────
+# TARGET GROUP — stays forever
+# ─────────────────────────────────────────
+
+resource "aws_lb_target_group" "this" {
+  name     = "my-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    path                = "/health"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    matcher             = "200"
+  }
+
+  tags = {
+    Name = "my-tg"
+  }
+}
+
+
+# ─────────────────────────────────────────
+# LISTENER — stays forever
+# ─────────────────────────────────────────
+
+resource "aws_lb_listener" "this" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.this.arn
+  }
+}
+
+
+# ─────────────────────────────────────────
+# LAUNCH TEMPLATE — recreated on AMI/type change
+# create_before_destroy = true ← KEY
+# ─────────────────────────────────────────
+
+resource "aws_launch_template" "this" {
+  name_prefix   = "my-lt-"             # prefix so new name auto generated
+  image_id      = var.ami_id           # ← change ami here
+  instance_type = var.instance_type    # ← change instance type here
+
+  vpc_security_group_ids = [aws_security_group.ec2.id]
+
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    yum update -y
+    yum install -y nginx
+    systemctl start nginx
+    systemctl enable nginx
+  EOF
+  )
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "my-app-server"
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true    # ← new LT created before old deleted
+  }
+}
+
+
+# ─────────────────────────────────────────
+# AUTO SCALING GROUP — recreated on change
+# create_before_destroy = true ← KEY
+# ─────────────────────────────────────────
+
+resource "aws_autoscaling_group" "this" {
+  name_prefix         = "my-asg-"          # prefix = new name on each apply
+  desired_capacity    = 2
+  min_size            = 1
+  max_size            = 4
+  vpc_zone_identifier = var.subnet_ids
+
+  target_group_arns = [aws_lb_target_group.this.arn]  # link to TG
+
+  # wait for instances to be healthy in TG before proceeding
+  wait_for_elb_capacity = 2
+
+  launch_template {
+    id      = aws_launch_template.this.id
+    version = "$Latest"
+  }
+
+  # health check via ALB not EC2
+  health_check_type         = "ELB"
+  health_check_grace_period = 60
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50    # always keep 50% healthy during update
+    }
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "my-app-server"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true    # ← new ASG created before old deleted
+  }
+}
+
+
+# ─────────────────────────────────────────
+# outputs.tf
+# ─────────────────────────────────────────
+
+output "alb_dns_name" {
+  description = "ALB DNS — use this to access app"
+  value       = aws_lb.this.dns_name
+}
+
+output "target_group_arn" {
+  value = aws_lb_target_group.this.arn
+}
