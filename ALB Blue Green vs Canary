@@ -1,0 +1,38 @@
+Blue/Green        Canary
+────────────────────────────────────────────────────────────────────
+ALB                 1                 1
+TG                  2                 2
+ASG                 2                 2
+cost                2x ❌             2x ❌
+mixed versions      ✅ no             ✅ no
+old+new traffic     0or100 no mix     5% new rest old
+traffic control     0 or 100 only     5→25→50→100
+test before live    ✅ yes            ✅ yes
+rollback            instant ✅        instant ✅
+users affected      100% at switch ⚠️ 5% only ✅
+complexity          medium            complex
+risk                low               lowest ✅
+best for            feature release   critical apps
+────────────────────────────────────────────────────────────────────
+BOTH USE SAME ALB WEIGHT FEATURE
+────────────────────────────────────────────────────────────────────
+ALB Listener Rule → Forward Action → Target Group Weights
+same feature — difference is HOW you use the weights
+
+Blue/Green → weight as SWITCH      Canary → weight as DIAL
+  TG-Blue  = 100  TG-Green = 0       TG-Old = 100  TG-New = 0
+  TG-Blue  = 0    TG-Green = 100     TG-Old = 95   TG-New = 5
+  pattern: 100/0 → 0/100             TG-Old = 75   TG-New = 25
+  instant full switch                TG-Old = 50   TG-New = 50
+  like light switch ON/OFF           TG-Old = 0    TG-New = 100
+                                     like dimmer switch
+────────────────────────────────────────────────────────────────────
+ANALOGY
+Blue/Green →  jump to a second car instantly
+Canary     →  let 5 people test the car first
+              then give to everyone
+────────────────────────────────────────────────────────────────────
+CANARY IN AWS CONSOLE
+  ALB → Listeners → View/edit rules
+  edit forward action → change weights → Save
+  TG-old 95  TG-new 5  → monitor → increase gradually → 0/100
