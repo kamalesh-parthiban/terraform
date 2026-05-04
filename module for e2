@@ -1,3 +1,14 @@
+Now you can see the reuse clearly:
+
+                Without module              With module
+------------------------------------------------------------
+Dev infra       12 resource blocks          6 lines
+Prod infra      12 resource blocks again    6 lines
+Total lines     ~200 lines                  ~12 lines
+Add new alarm   Update in 2 places          Update in 1 place
+
+That's the real reusability — 12 resources written once, called with just 6 lines.
+-----------------------------------------------------------------------------------------------
 # main.tf
 provider "aws" {
   region = "us-east-1"          // AWS region where all resources will be created
