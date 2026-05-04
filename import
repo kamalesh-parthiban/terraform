@@ -1,7 +1,7 @@
 #$ cat import.tf
 
 import {
-  to = aws_instance.my_server       // which terraform resource to import into // aws_instance = resource type  // my_server    = resource name you give it
+  to = aws_instance.my_server       // which terraform resource to import into // aws_instance = resource type/ |my_server| is the Terraform resource name you give it — NOT the actual EC2 name:
   id = "i-09519fa48c7c66f84"    # your actual EC2 instance ID
 }
 
