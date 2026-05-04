@@ -63,3 +63,150 @@ Same module, different values — no need to rewrite the EC2 resource twice.
 
 dev_ec2  → t3.micro  , name = "dev-ec2"
 prod_ec2 → t3.large  , name = "prod-ec2"
+
+----------------------------------------------------
+Here's a realistic EC2 module with multiple resources inside:
+
+So honestly the benefit is small for 2-3 resources inside module. The real benefit shows when your module has 10-15 resources inside it — security groups, 
+IAM roles, EBS volumes,elastic IPs all together. Then calling it twice vs copy pasting 15 resource blocks — that's where reuse actually makes sense.
+
+12 resource blocks
+
+# modules/ec2/main.tf
+
+# 1. EC2 instance
+resource "aws_instance" "this" {
+  ami             = var.ami
+  instance_type   = var.instance_type
+  key_name        = var.key_name
+  subnet_id       = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.this.id]
+  iam_instance_profile   = aws_iam_instance_profile.this.name
+  monitoring      = true
+  ebs_optimized   = true
+  tags = { Name = var.name, Env = var.env }
+}
+
+# 2. Security group
+resource "aws_security_group" "this" {
+  name   = "${var.name}-sg"
+  vpc_id = var.vpc_id
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# 3. EBS volume
+resource "aws_ebs_volume" "this" {
+  availability_zone = aws_instance.this.availability_zone
+  size              = var.ebs_size
+  encrypted         = true
+  tags = { Name = "${var.name}-ebs" }
+}
+
+# 4. EBS attachment
+resource "aws_volume_attachment" "this" {
+  device_name = "/dev/xvdf"
+  volume_id   = aws_ebs_volume.this.id
+  instance_id = aws_instance.this.id
+}
+
+# 5. Elastic IP
+resource "aws_eip" "this" {
+  instance = aws_instance.this.id
+  vpc      = true
+}
+
+# 6. IAM role
+resource "aws_iam_role" "this" {
+  name = "${var.name}-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+# 7. IAM policy attachment
+resource "aws_iam_role_policy_attachment" "this" {
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# 8. IAM instance profile
+resource "aws_iam_instance_profile" "this" {
+  name = "${var.name}-profile"
+  role = aws_iam_role.this.name
+}
+
+# 9. CloudWatch alarm — CPU
+resource "aws_cloudwatch_metric_alarm" "cpu" {
+  alarm_name          = "${var.name}-cpu-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 120
+  threshold           = 80
+  dimensions = { InstanceId = aws_instance.this.id }
+}
+
+# 10. CloudWatch alarm — disk
+resource "aws_cloudwatch_metric_alarm" "disk" {
+  alarm_name          = "${var.name}-disk-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "DiskSpaceUtilization"
+  namespace           = "System/Linux"
+  period              = 120
+  threshold           = 90
+  dimensions = { InstanceId = aws_instance.this.id }
+}
+
+# 11. SNS topic for alerts
+resource "aws_sns_topic" "this" {
+  name = "${var.name}-alerts"
+}
+
+# 12. SNS subscription
+resource "aws_sns_topic_subscription" "this" {
+  topic_arn = aws_sns_topic.this.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+------------------------------
+Now calling it for dev and prod:
+
+# just 6 lines each — instead of 12 resources × 2 = 24 resource blocks
+module "dev_ec2" {
+  source      = "./modules/ec2"
+  name        = "dev-ec2"
+  instance_type = "t2.micro"
+  ami         = "ami-111"
+  env         = "dev"
+  ebs_size    = 20
+  alert_email = "dev@myorg.com"
+}
+
+module "prod_ec2" {
+  source      = "./modules/ec2"
+  name        = "prod-ec2"
+  instance_type = "t3.large"
+  ami         = "ami-222"
+  env         = "prod"
+  ebs_size    = 100
+  alert_email = "prod@myorg.com"
+}
+
