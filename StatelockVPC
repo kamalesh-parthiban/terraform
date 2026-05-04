@@ -99,3 +99,17 @@ list versions → pick old VersionId → download → push → apply
 
 ⚠️ Without versioning, each apply overwrites the previous state — no rollback possible.
 
+--------------------------------------
+Quick Reference — DynamoDB Table Setup
+
+Setting                     Required Value
+------------------------------------------------------------
+Table Name                  Any name (e.g., terraform-locks)
+
+Partition Key (name)        LockID  ← must be exact
+
+Partition Key (type)        String
+
+Sort Key                    None (not needed)
+
+Billing Mode                On-Demand or Provisioned (your choice)
