@@ -1,5 +1,5 @@
-Rolling              Blue/Green        Canary
-(create_before)
+                  Rolling              Blue/Green        Canary
+                 (create_before)
 ────────────────────────────────────────────────────────────────────
 ALB                 1                    1                 1
 TG                  1                    2                 2
