@@ -48,6 +48,16 @@ uses:
 
 A module is a reusable group of Terraform resources
 
+"Reusable group of resources" breaks down as:
+
+Group — multiple resources bundled together in one place:
+main.tf → aws_instance + aws_security_group + aws_ebs_volume + aws_iam_role + aws_cloudwatch_alarm
+
+Reusable — call it multiple times with different inputs without rewriting those resources:
+
+module "dev_ec2"  { source = "./modules/ec2"  env = "dev"  ... }
+module "prod_ec2" { source = "./modules/ec2"  env = "prod" ... }
+
 
 # reuse same module for dev and prod
 module "dev_ec2" {
