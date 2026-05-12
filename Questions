@@ -154,3 +154,74 @@ resource "aws_s3_bucket" "bucket_mumbai" {
   }
 }
 ----------------------------------------------------------------------------------------------------------
+you have a workspace for dev QA product. so unfortunately, you've deleted the prod workspace, so what will happen now?
+
+What happens when you delete prod workspace:
+
+terraform workspace delete prod
+        │
+        ▼
+State file for prod → DELETED permanently
+Resources in AWS    → STILL RUNNING ✅
+Terraform control   → LOST ❌
+
+Immediate impact:
+
+Prod resources still running in AWS
+But Terraform has no state file
+If someone runs terraform apply → 
+creates DUPLICATE resources ❌
+If someone runs terraform destroy →
+won't find anything in state ❌
+Complete drift between Terraform and AWS
+
+Option 1 — State file in S3 backend (best case):
+
+# If you configured remote backend like this:
+terraform {
+  backend "s3" {
+    bucket = "my-terraform-state"
+    key    = "prod/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
+
+# State file still in S3 even if workspace deleted
+# Go to S3 bucket → find prod state file
+# Recreate workspace and restore
+
+# Step 1 - recreate prod workspace
+terraform workspace new prod
+
+# Step 2 - state already in S3
+# just switch to prod
+terraform workspace select prod
+
+# Step 3 - verify
+terraform state list
+terraform plan    # should show no changes ✅
+---------
+Option 2 — Local backend (worst case):
+
+State file stored locally
+workspace delete → state file gone forever
+No recovery possible ❌
+
+Only option:
+→ terraform import every resource manually
+→ one by one bring back into state
+
+Recovery steps for local backend:
+
+# Step 1 - recreate prod workspace
+terraform workspace new prod
+
+# Step 2 - import all resources one by one
+terraform import aws_instance.web      i-1111111
+terraform import aws_instance.app      i-2222222
+terraform import aws_db_instance.prod  my-prod-db
+terraform import aws_vpc.prod          vpc-12345
+
+# Step 3 - verify
+terraform plan    # should show no changes
+-----------------------------------------------------------------------------
