@@ -6,6 +6,16 @@ Lock file        → DynamoDB
 
 Three separate places
 All safe ✅
+
+# When you clone and run terraform init
+git clone your-repo
+cd your-repo
+terraform init
+#     ↑
+#     reads backend config
+#     connects to S3 automatically
+#     downloads state file
+#     now terraform knows what exists ✅
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 1. after you remove the resource from Terraform state file, the order command you run that, it is been on tracked. So when you do the Terraform plan next time, if you see that the new resources, we are not trying to create it. When you run the Terraform plan, the resource will be created one. So how do you fix this drift?
