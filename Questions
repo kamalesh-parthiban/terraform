@@ -65,3 +65,92 @@ terraform state rm $(terraform state list)
 
 # Then delete or archive all .tf files
 -----------------------------------------------------
+3. you need to write a Terraform code for an all only for AWS. In that you need to provision the resources in an all multiple regions. How will you write the code in that?
+
+The concept:
+
+Normal Terraform    → one provider, one region
+Multiple regions    → multiple providers with alias
+
+provider.tf:
+
+# Region 1 - US East (default)
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Region 2 - US East 2
+provider "aws" {
+  alias  = "ohio"
+  region = "us-east-2"
+}
+
+# Region 3 - Mumbai
+provider "aws" {
+  alias  = "mumbai"
+  region = "ap-south-1"
+}
+
+# Region 4 - Singapore
+provider "aws" {
+  alias  = "singapore"
+  region = "ap-southeast-1"
+}
+
+main.tf:
+
+# EC2 in US East 1 (default)
+resource "aws_instance" "server_use1" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name   = "server-us-east-1"
+    Region = "us-east-1"
+  }
+}
+
+# EC2 in US East 2 (Ohio)
+resource "aws_instance" "server_use2" {
+  provider      = aws.ohio          # ← alias used here
+  ami           = "ami-0a54f99b17"  # different AMI per region
+  instance_type = "t2.micro"
+
+  tags = {
+    Name   = "server-us-east-2"
+    Region = "us-east-2"
+  }
+}
+
+# EC2 in Mumbai
+resource "aws_instance" "server_mumbai" {
+  provider      = aws.mumbai        # ← alias used here
+  ami           = "ami-0b44f99c17"  # Mumbai AMI
+  instance_type = "t2.micro"
+
+  tags = {
+    Name   = "server-mumbai"
+    Region = "ap-south-1"
+  }
+}
+
+# S3 bucket in Ohio
+resource "aws_s3_bucket" "bucket_ohio" {
+  provider = aws.ohio
+  bucket   = "my-bucket-ohio-2024"
+
+  tags = {
+    Region = "us-east-2"
+  }
+}
+
+# S3 bucket in Mumbai
+resource "aws_s3_bucket" "bucket_mumbai" {
+  provider = aws.mumbai
+  bucket   = "my-bucket-mumbai-2024"
+
+  tags = {
+    Region = "ap-south-1"
+  }
+}
+----------------------------------------------------------------------------------------------------------
