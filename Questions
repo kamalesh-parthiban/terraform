@@ -245,3 +245,93 @@ terraform import aws_vpc.prod          vpc-12345
 # Step 3 - verify
 terraform plan    # should show no changes
 -----------------------------------------------------------------------------
+what happens if a provider is getting upgraded? for example, you are in an AWS 7.5 provider, and that needs to be updated to 7.6. It's a major version. So how do you plan for this?
+
+Step 1 — Check current version:
+
+# versions.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 7.5"    ← current
+    }
+  }
+}
+
+Step 2 — Read changelog first:
+
+Always check before upgrading:
+https://github.com/hashicorp/terraform-provider-aws/releases
+
+Look for:
+├── Breaking changes    ← most important
+├── Deprecated fields   ← need to update code
+├── New required args   ← need to add to main.tf
+└── Removed resources   ← need to replace
+
+Step 3 — Test in dev first:
+
+NEVER upgrade prod directly
+
+Order:
+dev workspace first    → test upgrade
+qa workspace second    → verify
+prod workspace last    → after confirmed safe
+
+Step 4 — Update version in code:
+
+# versions.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 7.6"    ← updated
+    }
+  }
+}
+
+Step 5 — Run upgrade commands:
+
+# Update provider
+terraform init -upgrade
+
+# Check what will change
+terraform plan
+
+# Look for:
+# ├── any resource changes
+# ├── any deprecation warnings
+# └── any errors
+
+Step 6 — Fix breaking changes:
+
+# Example: field name changed in 7.6
+# Before 7.5:
+resource "aws_instance" "server" {
+  security_groups = ["sg-12345"]    ← old field
+}
+
+# After 7.6:
+resource "aws_instance" "server" {
+  vpc_security_group_ids = ["sg-12345"]   ← new field
+}
+
+Step 7 — Apply in order:
+
+# Dev first
+terraform workspace select dev
+terraform apply
+# verify everything works ✅
+
+# QA next
+terraform workspace select qa
+terraform apply
+# verify everything works ✅
+
+# Prod last
+terraform workspace select prod
+terraform apply
+# verify everything works ✅
+
+--------------------------------------------------------------------------------------------------------------------------------------------
