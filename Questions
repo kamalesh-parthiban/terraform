@@ -1,4 +1,4 @@
-after you remove the resource from Terraform state file, the order command you run that, it is been on tracked. So when you do the Terraform plan next time, if you see that the new resources, we are not trying to create it. When you run the Terraform plan, the resource will be created one. So how do you fix this drift?
+1. after you remove the resource from Terraform state file, the order command you run that, it is been on tracked. So when you do the Terraform plan next time, if you see that the new resources, we are not trying to create it. When you run the Terraform plan, the resource will be created one. So how do you fix this drift?
 
 terraform state rm 
 does — removes from state only, not from AWS or main.tf!
@@ -17,3 +17,51 @@ Your scenario → needs import first
                 then refresh-only works
 
 -------------------------------------------------------------------------------
+
+2. I wanted to unmanage the resource from a Terraform, going forward, I don't want to manage any resources from the account is via the Terraform. So how do you unmanage it?
+
+Step 1 — Remove from state file:
+
+# Remove specific resource
+terraform state rm aws_instance.myserver
+
+# Remove all resources
+terraform state rm $(terraform state list)
+
+Step 2 — Remove from main.tf:
+
+# Delete or comment out the resource block
+# from your main.tf
+
+# Before:
+resource "aws_instance" "myserver" {
+    ami           = "ami-12345"
+    instance_type = "t2.micro"
+}
+
+# After:
+# delete this block completely
+
+Why both steps needed:
+
+Remove from state only:
+→ next terraform plan tries to CREATE again ❌
+
+Remove from main.tf only:
+→ next terraform plan tries to DESTROY it ❌
+
+Remove BOTH:
+→ Terraform completely forgets resource ✅
+→ Resource still running in AWS ✅
+→ No create, no destroy ✅
+
+If you want to unmanage EVERYTHING:
+
+# Option 1 - delete state file
+rm terraform.tfstate
+
+# Option 2 - remove all from state
+terraform state rm $(terraform state list)
+
+# Then delete or archive all .tf files
+-----------------------------------------------------
