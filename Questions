@@ -1,3 +1,13 @@
+Real production setup always:
+
+Code (main.tf)   → Git repository (GitHub/GitLab/CodeCommit)
+State file       → S3 backend
+Lock file        → DynamoDB
+
+Three separate places
+All safe ✅
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
 1. after you remove the resource from Terraform state file, the order command you run that, it is been on tracked. So when you do the Terraform plan next time, if you see that the new resources, we are not trying to create it. When you run the Terraform plan, the resource will be created one. So how do you fix this drift?
 
 terraform state rm 
