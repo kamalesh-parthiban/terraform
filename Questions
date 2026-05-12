@@ -1,0 +1,19 @@
+after you remove the resource from Terraform state file, the order command you run that, it is been on tracked. So when you do the Terraform plan next time, if you see that the new resources, we are not trying to create it. When you run the Terraform plan, the resource will be created one. So how do you fix this drift?
+
+terraform state rm 
+does — removes from state only, not from AWS or main.tf!
+
+main.tf    → has resource ✅
+state file → removed ❌
+AWS        → running ✅
+
+refresh-only → updates EXISTING state entries
+               with current AWS values
+
+import       → ADDS missing resource
+               back into state file
+
+Your scenario → needs import first
+                then refresh-only works
+
+-------------------------------------------------------------------------------
