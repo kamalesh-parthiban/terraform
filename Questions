@@ -335,3 +335,70 @@ terraform apply
 # verify everything works ✅
 
 --------------------------------------------------------------------------------------------------------------------------------------------
+you have a Linux server, this has been deployed via Terraform like a month ago with the data volume through Terraform itself. So currently it is sizing with 500 GB. 
+the application team has started using it and they wanted to extend the block system to 750 GB. so now you are going into the your own workspace in Terraform and 
+reviewing the code and you are changing the additional disk volume size GB from 500 to 750 GB. Okay, if you run a Terraform plan and apply, what will happen here?
+
+Current situation:
+
+EC2 instance    → running ✅
+Data volume     → 500GB   ✅
+Running 1 month → has application data ✅
+
+You change in main.tf:
+
+# Before
+resource "aws_ebs_volume" "data" {
+  size = 500        ← change this
+}
+
+# After
+resource "aws_ebs_volume" "data" {
+  size = 750        ← to this
+}
+
+terraform plan shows:
+
+~ aws_ebs_volume.data
+    size: 500 → 750
+
+# ~ means UPDATE in place
+# not destroy and recreate
+
+terraform apply — what happens:
+
+AWS receives request
+        │
+        ▼
+EBS volume resized from 500 → 750GB
+        │
+        ▼
+No data loss ✅
+No downtime ✅
+Volume extended in AWS ✅
+
+BUT — one important thing:
+
+EBS volume shows 750GB in AWS ✅
+OS inside EC2 still shows 500GB ❌
+        │
+        ▼
+You must extend filesystem manually!
+
+Fix — extend filesystem manually:
+
+# For ext4:
+sudo resize2fs /dev/xvdf1
+
+# For xfs:
+sudo xfs_growfs /dev/xvdf1
+
+# Step 4 - verify
+df -h
+# now shows 750GB ✅
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
