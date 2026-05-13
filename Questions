@@ -397,7 +397,60 @@ sudo xfs_growfs /dev/xvdf1
 df -h
 # now shows 750GB ✅
 -------------------------------------------------------------------------------------------------------------------------------------------
+We have one terraform file, In that the multiple resources are working on it. If the same file was edited by multiple resources, 
+then how you will have?
 
+Great question! This is the Terraform State Locking concept.
+
+The problem:
+
+Developer 1 → runs terraform apply
+Developer 2 → runs terraform apply same time
+        │
+        ▼
+Both modify state file simultaneously
+        │
+        ▼
+State file corrupts ❌
+Resources conflict ❌
+Unpredictable changes ❌
+
+Solution — DynamoDB State Locking:
+
+How it works:
+
+Developer 1 runs terraform apply
+        │
+        ▼
+Terraform acquires lock in DynamoDB
+        │
+        ▼
+Developer 2 runs terraform apply
+        │
+        ▼
+Terraform checks DynamoDB
+Lock exists → Developer 2 BLOCKED ❌
+        │
+        ▼
+Developer 1 finishes
+Lock released
+        │
+        ▼
+Developer 2 can now run ✅
+
+Setup — backend.tf:
+
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state"
+    key            = "prod/terraform.tfstate"
+    region         = "us-east-2"
+    dynamodb_table = "terraform-lock"    ← locking
+    encrypt        = true
+  }
+}
+
+--------------------------------------------------------------------------------------------------------------------------------
 
 
 
