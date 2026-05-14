@@ -451,6 +451,58 @@ terraform {
 }
 
 --------------------------------------------------------------------------------------------------------------------------------
+What happens if a Terraform-managed resource is manually deleted outside Terraform but still exists in the code?
+
+The situation:
+
+main.tf      → has resource ✅
+state file   → has resource ✅
+AWS          → resource DELETED ❌
+              (someone deleted manually)
+
+Full flow:
+
+Someone deletes EC2 manually
+        │
+        ▼
+main.tf    → has resource ✅
+state file → has resource ✅
+AWS        → no resource  ❌
+        │
+        ▼
+terraform plan
+→ shows resource will be CREATED
+        │
+        ▼
+Terraform reads state file → resource exists
+Terraform checks AWS      → resource missing
+
+terraform apply
+→ creates resource again
+→ drift fixed ✅
+
+---
+So Terraform automatically fixes it:
+
+Deleted manually → terraform apply → recreated ✅
+This is called   → drift remediation
+Terraform always → tries to match main.tf
+-----
+What if you DON'T want to recreate:
+
+Resource deleted intentionally
+You don't want it back
+But code still has it
+
+Options:
+
+Option 1 → Remove from main.tf
+            terraform plan → no changes ✅
+
+Option 2 → Remove from state
+            terraform state rm aws_instance.myserver
+            terraform plan → no changes ✅
+-------------------------------------------------------------------------------------------------------------
 
 
 
