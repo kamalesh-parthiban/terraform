@@ -503,6 +503,45 @@ Option 2 → Remove from state
             terraform state rm aws_instance.myserver
             terraform plan → no changes ✅
 -------------------------------------------------------------------------------------------------------------
+How do you call a Terraform module from another module or root module?
+
+What is a module:
+
+Module = reusable Terraform code
+         write once → use anywhere
+
+Like a function in Python:
+def create_ec2():   ← define once
+    ...
+
+create_ec2()        ← call anywhere
+---------------------
+
+Folder structure:
+
+terraform/
+├── main.tf              ← root module
+├── variables.tf
+├── outputs.tf
+└── modules/
+    ├── ec2/
+    │   ├── main.tf      ← ec2 module
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── vpc/
+    │   ├── main.tf      ← vpc module
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── rds/
+        ├── main.tf      ← rds module
+        ├── variables.tf
+        └── outputs.tf
+
+---
+One line for interview:
+
+"We define reusable modules in modules/ folder with input variables and outputs, then call them from root module using module block with source path,
+passing required variables and using outputs to chain modules together like vpc outputs feeding into eks module"
 
 
 
