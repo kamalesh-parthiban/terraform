@@ -48,7 +48,7 @@ provider "aws" {
   region = "us-east-1"
 
   assume_role {
-    role_arn = "arn:aws:iam::PROD_ACCOUNT_ID:role/TerraformRole"
+    role_arn = "arn:aws:iam::PROD_ACCOUNT_ID:role/TerraformRole"  // aws sts assume-role --role-arn arn:aws:iam::PROD_ACCOUNT_ID.. export  AccessKeyId SecretAccessKey SessionToken automatic instead of manual.
   }
 }
 
