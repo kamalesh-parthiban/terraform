@@ -5,6 +5,7 @@ import {
   id = "i-09519fa48c7c66f84"    # your actual EC2 instance ID
 }
 
+terraform import aws_instance.my_server i-1234567890abcdef0
 ---------------------------
 
 #$ cat main.tf
