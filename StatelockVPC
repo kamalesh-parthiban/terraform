@@ -47,8 +47,11 @@ terraform {
     dynamodb_table = "terraform-locks"                    // DynamoDB table name - create this manually in AWS  // dynamodb - tablename= terraform-locks and partition key = LockID
   }
 }
+------
+One backend.tf is enough — Terraform workspaces automatically create separate state file paths.
 
-
+key = "${terraform.workspace}/terraform.tfstate"
+------
 #terraform force-unlock <LOCK_ID>
 
 #Use terraform state list and terraform state show to verify the state before unlocking.
