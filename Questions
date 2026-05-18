@@ -589,5 +589,21 @@ terraform import ──► resource by resource ──► rebuilds state manuall
         ▼
 terraform refresh ──► only AFTER import, to sync any drift
 ---------------------------------------------------------------------------------
+To show particular resource from state
+--------------
+terraform state show aws_instance.dev_ec2
 
+
+---------
+To remove particular resource from state
+-------
+terraform state rm aws_instance.dev_ec2
+
+---
+# Check state file was updated
+terraform state list
+
+# Output:
+aws_instance.dev_ec2   ✅
+------------------------------
 
