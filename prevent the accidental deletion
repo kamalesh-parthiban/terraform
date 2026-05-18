@@ -20,3 +20,5 @@ Summary:
 prevent_destroy = true  → blocks destroy ✅
                           blocks terraform destroy ✅
                           blocks accidental deletion ✅
+
+No! prevent_destroy = true only protects against Terraform commands — it has zero control over manual deletion.
