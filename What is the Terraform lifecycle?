@@ -1,0 +1,45 @@
+What is the Terraform lifecycle?
+
+4 Stages of Terraform Lifecycle:
+
+Write Code  →  Init  →  Plan  →  Apply  →  Destroy
+
+Stage by Stage:
+1. terraform init
+
+terraform init
+# Downloads providers (AWS, Azure)
+# Sets up backend (S3, local)
+# First command always!
+
+2. terraform plan
+
+terraform plan
+# Compares: current state vs desired code
+# Shows what will be created/changed/destroyed
+# Nothing actually happens — just preview
+
+3. terraform apply
+
+terraform apply
+# Actually creates/modifies infrastructure
+# Updates terraform.tfstate file
+
+4. terraform destroy
+
+terraform destroy
+# Destroys all resources managed by terraform
+# Updates state file
+
+Lifecycle Meta-Arguments (important for interviews):
+
+resource "aws_instance" "web" {
+  ami           = "ami-12345"
+  instance_type = "t3.micro"
+
+  lifecycle {
+    create_before_destroy = true   # create new before deleting old
+    prevent_destroy       = true   # block accidental destroy
+    ignore_changes        = [tags] # ignore tag changes
+  }
+}
