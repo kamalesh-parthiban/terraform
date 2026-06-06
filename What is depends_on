@@ -1,0 +1,35 @@
+depends_on tells Terraform — "create this resource ONLY AFTER that resource is ready"
+
+depends_on explicitly tells Terraform to create a resource only after specified resources are ready. 
+It is needed when the dependency is not a direct reference — like IAM policy attachments that must exist before EKS cluster creation. ✅
+
+Example — without depends_on (problem):
+
+# Terraform may create both at same time ❌
+resource "aws_instance" "web" {
+  ami           = "ami-12345"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.main.id
+}
+
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+# EC2 may try to create before subnet is ready ❌
+
+Example — with depends_on (solution):
+
+resource "aws_instance" "web" {
+  ami           = "ami-12345"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.main.id
+
+  depends_on = [aws_subnet.main]  # wait for subnet first ✅
+}
+
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+
