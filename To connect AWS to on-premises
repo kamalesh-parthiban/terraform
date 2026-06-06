@@ -1,0 +1,72 @@
+To connect AWS to on-premises?
+
+| Scenario                | Solution                  |
+| ----------------------- | ------------------------- |
+| Single VPC + On-prem    | Simple Site-to-Site VPN   |
+| Multiple VPCs + On-prem | Transit Gateway ✅         |
+| Multi-region + On-prem  | Transit Gateway peering ✅ |
+
+
+How to setup Site-to-Site VPN:
+
+# 1. Create Virtual Private Gateway (AWS side)
+
+VPC → Virtual Private Gateways → Create Virtual Private Gateway
+  → Name: my-vgw
+  → ASN: Amazon default ASN
+  → Create
+  
+Then:
+  → Select VGW → Actions → Attach to VPC → Select your VPC ✅
+
+# 2. Create Customer Gateway (On-prem router IP)
+
+VPC → Customer Gateways → Create Customer Gateway
+  → Name: my-cgw
+  → BGP ASN: 65000 (on-prem router ASN)
+  → IP Address: <your on-prem router public IP>
+  → Create ✅
+
+On-Premises                    AWS
+┌──────────────┐               ┌──────────────┐
+│ Router       │               │ VGW          │
+│ 203.0.113.10 │←── VPN ──────│              │
+│ (CGW in AWS) │               │              │
+└──────────────┘               └──────────────┘
+
+# 3. Create VPN Connection between them
+
+VPC → Site-to-Site VPN Connections → Create VPN Connection
+  → Name: my-vpn
+  → Virtual Private Gateway: select my-vgw
+  → Customer Gateway: Existing → select my-cgw
+  → Routing: Static or Dynamic (BGP)
+  → Static IP Prefix: 192.168.0.0/24  (on-prem CIDR)
+  → Create ✅
+
+# 4. Download config → apply on on-prem router
+# 5. Update route tables in VPC
+-------------------------------------
+Yes! Transit Gateway also connects AWS to On-premises.
+
+Normal VPN vs Transit Gateway VPN:
+
+# Without Transit Gateway ❌
+On-Premises ←→ VPC1 (separate VPN)
+On-Premises ←→ VPC2 (separate VPN)
+On-Premises ←→ VPC3 (separate VPN)
+# 3 separate VPN connections!
+
+# With Transit Gateway ✅
+On-Premises ←→ Transit Gateway ←→ VPC1
+                                ←→ VPC2
+                                ←→ VPC3
+# Single connection — hub and spoke model!
+
+                    ┌─────────────────┐
+                    │  Transit Gateway│
+                    └────────┬────────┘
+          ┌─────────────┬────┴────┬─────────────┐
+          ↓             ↓         ↓              ↓
+        VPC1          VPC2      VPC3         On-Premises
+                                            (via VPN/DX)
