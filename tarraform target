@@ -15,7 +15,16 @@ terraform apply -target="aws_vpc.my_vpc"
 
 # apply module
 terraform apply -target="module.ec2"
+---------------------------------------------------------------------------
+# targeted apply
+terraform apply -target="aws_instance.my"
 
+# targeted destroy
+terraform destroy -target="aws_instance.my"
+
+# same -target flag ✅
+# just different command
+-------------------------------------------------------------
 When to use:
 
 testing a single resource    ✅
