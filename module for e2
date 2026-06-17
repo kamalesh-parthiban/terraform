@@ -48,6 +48,7 @@ variable "name" {}          // declares name variable - accepts value from paren
 uses:
 
 A module is a reusable group of Terraform resources
+We define reusable modules in modules/ folder with input variables and outputs, then call them from root module using module block with source path
 
 "Reusable group of resources" breaks down as:
 
