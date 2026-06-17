@@ -50,6 +50,8 @@ resource "aws_instance" "this" {
 --=========================-------------------
 A workspace is a way to manage multiple environments (dev, prod) using the same Terraform code with separate state files.
 
+Terraform workspaces manage separate state files within the same account
+
 
 $ tree
 .
