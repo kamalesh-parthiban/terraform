@@ -23,6 +23,7 @@ module "ec2" {                  // calling a reusable module named ec2  // it ca
 }
 
 # ─────────────────────────────────────────
+In Terraform, the filename doesn't matter — it can be any name ending in .tf. So /ec2/main.tf could just as well be /ec2/ec2.tf — Terraform won't care.
 # modules/ec2/main.tf
 # ─────────────────────────────────────────
 resource "aws_instance" "app" {
