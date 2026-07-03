@@ -1,0 +1,98 @@
+What is a dynamic block in Terraform?
+
+Dynamic blocks generate repeated nested configuration blocks (like ingress, tag, setting) from a collection using a for_each loop, 
+avoiding manual repetition when the number of nested blocks is variable.
+
+Key Points (Interview-Ready)
+
+• Used for nested blocks only
+  - Not for creating multiple resources.
+  - Use count or for_each on the resource itself to create multiple resources.
+
+• for_each in a dynamic block
+  - Accepts a list, set, or map.
+
+• Inside the content { } block
+  - <blockname>.value → Current element's value.
+  - <blockname>.key   → Current element's key (for maps) or index (for lists).
+
+• Dynamic blocks can be nested
+  - A dynamic block can exist inside another dynamic block.
+  - Keep nesting minimal to maintain readability.
+
+• Best Practice
+  - Use dynamic blocks only when necessary.
+  - If the number of nested blocks is fixed, write them explicitly.
+  - HashiCorp recommends avoiding overuse because it reduces code readability.
+
+Interview One-Liner:
+Use dynamic when you need to generate multiple nested blocks inside a single resource.
+Use count or for_each when you need to create multiple resources.
+
+Syntax
+
+dynamic "block_name" {
+  for_each = <collection>
+  content {
+    # use block_name.value or block_name.key here
+  }
+}
+---
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+variable "ingress_rules" {
+  description = "List of ingress rules"
+  type = list(object({
+    port        = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+  default = [
+    { port = 80,  protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+    { port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+    { port = 22,  protocol = "tcp", cidr_blocks = ["10.0.0.0/16"] }
+  ]
+}
+
+resource "aws_security_group" "web_sg" {
+  name        = "web-sg"
+  description = "Allow HTTP, HTTPS, SSH"
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "web-sg"
+  }
+}
+
+resource "aws_instance" "web" {
+  ami                    = "ami-0c101f26f147fa7fd" # Amazon Linux 2023, us-east-1 - verify latest
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  tags = {
+    Name = "web-server"
+  }
+}
+
+output "instance_public_ip" {
+  value = aws_instance.web.public_ip
+}
