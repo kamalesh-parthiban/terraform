@@ -3,31 +3,77 @@ What is a dynamic block in Terraform?
 Dynamic blocks generate repeated nested configuration blocks (like ingress, tag, setting) from a collection using a for_each loop, 
 avoiding manual repetition when the number of nested blocks is variable.
 
-Key Points (Interview-Ready)
+A dynamic block is used to generate one or more nested
+configuration blocks dynamically using a loop (for_each).
 
-• Used for nested blocks only
-  - Not for creating multiple resources.
-  - Use count or for_each on the resource itself to create multiple resources.
+──────────────────────────────────────────────────────────
+Without Dynamic Block
 
-• for_each in a dynamic block
-  - Accepts a list, set, or map.
+resource "aws_security_group" "web" {
+  name = "web-sg"
 
-• Inside the content { } block
-  - <blockname>.value → Current element's value.
-  - <blockname>.key   → Current element's key (for maps) or index (for lists).
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-• Dynamic blocks can be nested
-  - A dynamic block can exist inside another dynamic block.
-  - Keep nesting minimal to maintain readability.
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
-• Best Practice
-  - Use dynamic blocks only when necessary.
-  - If the number of nested blocks is fixed, write them explicitly.
-  - HashiCorp recommends avoiding overuse because it reduces code readability.
+Here, the ingress block is written twice.
 
-Interview One-Liner:
-Use dynamic when you need to generate multiple nested blocks inside a single resource.
-Use count or for_each when you need to create multiple resources.
+──────────────────────────────────────────────────────────
+With Dynamic Block
+
+resource "aws_security_group" "web" {
+  name = "web-sg"
+
+  dynamic "ingress" {
+    for_each = [80, 443]
+
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
+
+Terraform automatically generates two ingress blocks.
+
+──────────────────────────────────────────────────────────
+Terraform Generates
+
+ingress {
+  from_port   = 80
+  to_port     = 80
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+ingress {
+  from_port   = 443
+  to_port     = 443
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+──────────────────────────────────────────────────────────
+Why Use Dynamic Blocks?
+
+✔ Avoid repeating the same nested block.
+✔ Make Terraform code shorter and cleaner.
+✔ Generate blocks based on variables or lists.
+✔ Easier to maintain and scale.
+
 
 Syntax
 
@@ -96,3 +142,64 @@ resource "aws_instance" "web" {
 output "instance_public_ip" {
   value = aws_instance.web.public_ip
 }
+-------------
+Static Nested Block vs Dynamic Block in Terraform
+
+──────────────────────────────────────────────
+Static Nested Block
+
+resource "aws_security_group" "web" {
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+  }
+}
+
+This is a static nested block:
+• Manually written
+• Fixed values
+• Used when number of blocks is known
+
+──────────────────────────────────────────────
+Dynamic Block
+
+resource "aws_security_group" "web" {
+  dynamic "ingress" {
+    for_each = [80, 443]
+
+    content {
+      from_port = ingress.value
+      to_port   = ingress.value
+      protocol  = "tcp"
+    }
+  }
+}
+
+This is a dynamic block:
+• Uses dynamic + for_each
+• Generates multiple nested blocks
+• Used when values are from variables/list/map
+
+──────────────────────────────────────────────
+Terraform Generates
+
+ingress {
+  from_port = 80
+  to_port   = 80
+  protocol  = "tcp"
+}
+
+ingress {
+  from_port = 443
+  to_port   = 443
+  protocol  = "tcp"
+}
+
+──────────────────────────────────────────────
+Interview Answer
+
+A static block is a manually defined nested block in Terraform.
+A dynamic block uses the "dynamic" keyword with "for_each"
+to generate multiple nested blocks automatically based on input
+values, making the configuration flexible and reusable.
