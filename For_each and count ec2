@@ -61,7 +61,7 @@ resource "aws_instance" "server" {
 each.key → the map key
 each.value → the map value
 
-2. Set of strings    // same concept as a Python set()
+2. Set of strings    // same concept as a Python set() // toset(["web", "api", "db", "web"]) # → {"api", "db", "web"} #Duplicate "web" is automatically collapsed to one
 
 resource "aws_instance" "server" {
   for_each = toset(["web", "api", "db"])
