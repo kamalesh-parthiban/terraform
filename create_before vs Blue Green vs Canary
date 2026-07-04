@@ -27,6 +27,129 @@ Canary     →  let 5 people test the car first
  create_before_destroy solves downtime.
  Blue/Green and Canary solve mixed versions." ✅
 
+How to add a new target group
+
+1. Go to EC2 Console → Load Balancers.
+2. Select your Application Load Balancer (ALB).
+3. Open the Listeners tab.
+4. Click View/Edit Rules.
+5. Select the listener rule and click Edit.
+6. In the Forward action:
+   - Click Add target group (+ Add target group).
+   - Select your new target group (e.g., TG-Green).
+   - Assign the traffic weights.
+
+     Example:
+     Target Group      Weight
+     ------------------------
+     TG-Blue           95
+     TG-Green          5
+
+7. Click Save to apply the changes.
+------------------------------
+Host-based routing:
+
+Listener :443
+
+Rule:
+IF Host = app.example.com
+THEN Forward to:
+    TG-Blue   (95)
+    TG-Green  (5)
+-------------------
+path-based routing:
+
+Listener :443
+
+Rule 1:
+IF Path = /api/*
+THEN Forward:
+    TG-API-Blue   (90)
+    TG-API-Green  (10)
+
+--------------------------
+
+So the flow is:
+
+Listener (80 or 443)
+        │
+        ▼
+Listener Rules
+        │
+        ├── Host-based routing
+        ├── Path-based routing
+        ├── Header-based routing
+        ├── Query string routing
+        └── Source IP routing
+                │
+                ▼
+        Forward Action
+                │
+                ├── TG-Blue (95%)
+                └── TG-Green (5%)
+---------------------------------------------
+In short:
+
+• Listener listens on a port (80 or 443).
+
+• Listener rules define conditions such as:
+  - Host-based routing
+  - Path-based routing
+  - HTTP header-based routing
+  - Query string routing
+  - Source IP routing
+
+• The Forward action in a listener rule sends traffic to one or more target groups.
+  This is where Blue/Green deployments and weighted traffic routing are configured.
+------------------------------------------
+
+Before deployment (100% Blue)
+
+ALB
+ └── Listener :80
+      └── Forward
+           └── TG-Blue (100%)
+
+During deployment (Canary)
+
+ALB
+ └── Listener :80
+      └── Forward
+           ├── TG-Blue (95%)
+           └── TG-Green (5%)
+
+After successful deployment
+
+ALB
+ └── Listener :80
+      └── Forward
+           ├── TG-Blue (0%)   (or remove it)
+           └── TG-Green (100%)
+
+for blue green same listener only we need to add tg?
+
+Yes. In a typical Blue/Green deployment using an Application Load Balancer, you use the same listener, but configure it to forward 
+to multiple target groups.
+----
+Case 1: HTTP (80) redirects to HTTPS (443) (Most common) ✅
+-----
+Listener 80:
+
+HTTP :80
+   ↓
+Redirect to HTTPS :443
+------
+Listener 443:
+
+HTTPS :443
+   ↓
+Forward
+   ├── TG-Blue
+   └── TG-Green
+
+In this case, you only need to configure Blue/Green on the 443 listener because the 80 listener is just redirecting traffic.
+
+
 NORMALLY IN AWS CONSOLE for Canary
 ──────────────────────────────────────────────────────────
 
