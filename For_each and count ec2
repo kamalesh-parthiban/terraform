@@ -21,3 +21,129 @@ Name = each.value
     Name = "ec2-${count.index}"
   }
 }
+
+But if you go to the AWS Console, the instances just show up with Name tags one, two, three
+
+If you ran:
+
+terraform state list
+
+you'd get:
+
+aws_instance.multi["one"]
+aws_instance.multi["three"]
+aws_instance.multi["two"]
+------------------
+Both count and for_each let you create multiple instances of a resource in Terraform, but they're designed for different situations. 
+Choosing the right one can make your infrastructure easier to maintain.
+
+| Feature                     | `count`                       | `for_each`                       |
+| --------------------------- | ----------------------------- | -------------------------------- |
+| Input                       | Number (`count = 3`)          | Map or Set (`for_each = {...}`)  |
+| Resource addressing         | Index (`resource.example[0]`) | Key (`resource.example["web"]`)  |
+| Best for                    | Identical resources           | Resources with unique identities |
+| Handles insertions/removals | Can recreate resources        | More stable                      |
+| Access current item         | `count.index`                 | `each.key`, `each.value`         |
+
+Yes — for_each supports exactly two types: a map or a set of strings. That's it, nothing else.
+
+1. Map  (same as a dictionary in Python)
+
+resource "aws_instance" "server" {
+  for_each = {
+    web = "t3.micro"
+    api = "t3.small"
+  }
+  instance_type = each.value
+  tags = { Name = each.key }
+}
+
+each.key → the map key
+each.value → the map value
+
+2. Set of strings    // same concept as a Python set()
+
+resource "aws_instance" "server" {
+  for_each = toset(["web", "api", "db"])
+  instance_type = "t3.micro"
+  tags = { Name = each.key }
+}
+
+each.key and each.value are identical (both equal the set element)
+
+| Type                               | Supported directly with `for_each`?                         |
+| ---------------------------------- | ----------------------------------------------------------- |
+| **Map**                            | ✅ Yes                                                       |
+| **Set of strings** (`set(string)`) | ✅ Yes                                                       |
+| **List** (`list`)                  | ❌ No (must convert using `toset()` or transform into a map) |
+| **Number**                         | ❌ No                                                        |
+| **String**                         | ❌ No                                                        |
+
+------------------------------------------------------
+
+Use for_each when resources have unique identities
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {                      // This is a Terraform locals block defining a local value called servers, whose value is a map of strings.
+  servers = {                 //  is just an arbitrary name you chose for this local value. It has no special meaning to Terraform. You could rename it to anything valid
+    web = "t3.micro"
+    api = "t3.small"
+    db  = "t3.medium"
+  }
+}
+
+resource "aws_instance" "server" {
+  for_each      = local.servers
+  ami           = "ami-123456"
+  instance_type = each.value
+
+  tags = {
+    Name = each.key
+  }
+}
+
+Resources become:
+
+terraform state list
+
+you'd get:
+
+aws_instance.server["web"]
+aws_instance.server["api"]
+aws_instance.server["db"]
+
+IN UI:
+
+The Name tags on the 3 instances will be:
+
+web
+api
+db
+
+Another example
+
+Suppose you have:
+
+locals {
+  buckets = {
+    logs     = "private"
+    backups  = "public-read"
+    artifacts = "private"
+  }
+}
+
+resource "aws_s3_bucket" "bucket" {
+  for_each = local.buckets
+
+  bucket = each.key
+  acl    = each.value
+}
+
+Terraform creates:
+
+aws_s3_bucket.bucket["logs"]
+aws_s3_bucket.bucket["backups"]
+aws_s3_bucket.bucket["artifacts"]
