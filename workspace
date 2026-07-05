@@ -80,3 +80,6 @@ For real-world production environments, it's generally recommended to use separa
 production. Workspaces are better suited for managing multiple instances of the same infrastructure within the same configuration, 
 not as the primary mechanism for environment isolation. Many teams instead keep separate state backends 
 (or separate Terraform configurations) for each environment.
+
+They're primarily for managing multiple state files for the same Terraform configuration, 
+not for creating separate environments like dev and prod.
