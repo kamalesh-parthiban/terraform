@@ -60,6 +60,20 @@ resource "aws_instance" "server" {
 
 each.key → the map key
 each.value → the map value
+--------
+Same for module as well
+-----------
+module "server" {
+  source = "./modules/ec2"
+
+  for_each = {
+    web = "t3.micro"
+    api = "t3.small"
+  }
+
+  instance_type = each.value
+  name          = each.key
+}
 
 2. Set of strings    // same concept as a Python set() // toset(["web", "api", "db", "web"]) # → {"api", "db", "web"} #Duplicate "web" is automatically collapsed to one
 
