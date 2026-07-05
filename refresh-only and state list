@@ -1,5 +1,7 @@
 Since Terraform v1.1, terraform refresh is deprecated and terraform apply -refresh-only should be used.
 
+It is used to synchronize the state with infrastructure changes made outside Terraform (drift).
+
 terraform apply               → makes infra match code
 terraform apply -refresh-only → makes state match real infra
 
