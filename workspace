@@ -7,7 +7,7 @@ provider "aws" {
 
 variable "ami" {}               // AMI ID declared here - value comes from terraform.tfvars
 
-variable "instance_type_map" {
+variable "instance_type_map" {   // it can be any name
   type = map(string)            // map type - key=string, value=string
   default = {
     dev   = "t3.micro"          // dev workspace   → t3.micro
