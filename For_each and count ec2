@@ -37,6 +37,9 @@ aws_instance.multi["two"]
 Both count and for_each let you create multiple instances of a resource in Terraform, but they're designed for different situations. 
 Choosing the right one can make your infrastructure easier to maintain.
 
+count → identified by index number (0, 1, 2...)
+for_each → identified by (map or set of strings)
+
 | Feature                     | `count`                       | `for_each`                       |
 | --------------------------- | ----------------------------- | -------------------------------- |
 | Input                       | Number (`count = 3`)          | Map or Set (`for_each = {...}`)  |
