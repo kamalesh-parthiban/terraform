@@ -1,3 +1,9 @@
+Terraform State Lock prevents multiple users from modifying the same Terraform state file at the same time.
+It ensures only one Terraform operation (such as apply or destroy) can update the state, preventing conflicts and corruption.
+Terraform acquires a lock via DynamoDB for S3 backend
+and releases it after — if someone else tries to run during that window, 
+they get a "state locked" error instead of proceeding.
+
 #main.tf
 
 provider "aws" {
