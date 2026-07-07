@@ -144,7 +144,7 @@ Another example
 
 Suppose you have:
 
-locals {
+locals {                    // Using locals makes your code cleaner and reusable. //If you need the same buckets map in multiple resources, you define it once in locals instead of repeating it.
   buckets = {
     logs     = "private"
     backups  = "public-read"
@@ -154,6 +154,19 @@ locals {
 
 resource "aws_s3_bucket" "bucket" {
   for_each = local.buckets         // The reason is that local.buckets is already a map, and for_each accepts maps directly. You only need toset() when your data is a list.
+
+  bucket = each.key
+  acl    = each.value
+}
+
+or
+
+resource "aws_s3_bucket" "bucket" {
+  for_each = {
+    logs      = "private"
+    backups   = "public-read"
+    artifacts = "private"
+  }
 
   bucket = each.key
   acl    = each.value
