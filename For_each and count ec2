@@ -171,7 +171,7 @@ How would you create multiple S3 buckets in Terraform?
 Here's the most common approach using for_each:
 
 variable "bucket_names" {
-  default = ["bucket-dev", "bucket-test", "bucket-prod"]
+  default = ["bucket-dev", "bucket-test", "bucket-prod"]   // This is a list of strings. // [] → List
 }
 
 resource "aws_s3_bucket" "buckets" {
