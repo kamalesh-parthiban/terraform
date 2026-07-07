@@ -16,6 +16,9 @@ provider "aws" {
 
 --------------------------------------------------------
 
+Terraform import: It is a Terraform command used to import existing infrastructure resources into the Terraform state without creating 
+or modifying them. After importing, the resource can be managed using Terraform configuration and commands.
+
 #terraform plan -generate-config-out=generated.tf        // to generate
 
 
