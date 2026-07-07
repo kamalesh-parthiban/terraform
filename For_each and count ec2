@@ -153,7 +153,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "bucket" {
-  for_each = local.buckets
+  for_each = local.buckets         // The reason is that local.buckets is already a map, and for_each accepts maps directly. You only need toset() when your data is a list.
 
   bucket = each.key
   acl    = each.value
