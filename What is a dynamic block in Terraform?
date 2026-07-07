@@ -35,7 +35,7 @@ With Dynamic Block
 resource "aws_security_group" "web" {
   name = "web-sg"
 
-  dynamic "ingress" {
+  dynamic "ingress" {                //Dynamic block for_each can iterate over any collection (list, set, or map) since it only generates nested blocks, not separate resources.
     for_each = [80, 443]
 
     content {
