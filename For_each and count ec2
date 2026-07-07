@@ -192,3 +192,7 @@ resource "aws_s3_bucket" "buckets" {
 
   bucket = each.value
 }
+
+or
+
+for_each = toset(["bucket-dev", "bucket-test", "bucket-prod"])
